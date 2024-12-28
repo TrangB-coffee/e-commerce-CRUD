@@ -18,6 +18,15 @@ public class ReviewServiceImpl implements ReviewService{
     }
 
     @Override
+    public Review getReview(Long reviewId, Long itemId) {
+        List<Review> reviews = reviewRepository.findByItemId(reviewId);
+        return reviews.stream()
+                .filter(review -> review.getId().equals(reviewId))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @Override
     public List<Review> getAllReviews(Long itemId) {
         List<Review> reviews = reviewRepository.findByItemId(itemId);
         return reviews;
