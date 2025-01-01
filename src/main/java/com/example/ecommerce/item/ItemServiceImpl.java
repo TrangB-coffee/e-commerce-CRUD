@@ -1,22 +1,32 @@
 package com.example.ecommerce.item;
 
-import com.example.ecommerce.category.Category;
-import com.example.ecommerce.category.CategoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
+import com.example.ecommerce.item.dto.ItemDTO;
+import com.example.ecommerce.item.external.Category;
+import com.example.ecommerce.item.external.Review;
+import com.example.ecommerce.mapper.CategoryMapper;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
     //private List<Item> items = new ArrayList<Item>();
 
-    private ItemRepository itemRepository;
+    ItemRepository itemRepository;
 
-
-
-    //private CategoryRepository categoryRepository;
+    //RestTemplate restTemplate = new RestTemplate() store in AppConfig
+    @Autowired
+    RestTemplate restTemplate;
 
     public ItemServiceImpl(ItemRepository itemRepository) {
         this.itemRepository = itemRepository;
@@ -27,8 +37,28 @@ public class ItemServiceImpl implements ItemService {
 //    }
 
     @Override
-    public List<Item> findAll() {
-        return itemRepository.findAll();
+    public List<ItemDTO> findAll() {
+        List<Item> items = itemRepository.findAll();
+        //List<ItemDTO> itemConnectCategories = new ArrayList<>();
+
+        return items.stream().map(this::convertToDTO).collect(Collectors.toList());
+
+    }
+    private ItemDTO convertToDTO(Item item){
+
+            //ItemDTO properties store in external;
+            Category category = restTemplate.getForObject("http://CATEGORY-SERVICE:8081/category/" + item.getCategoryId(), Category.class);
+
+            ResponseEntity<List<Review>> reviewResponse =  restTemplate.exchange("http://REVIEW-SERVICE:8083/reviews?itemId=" + item.getId(),
+                    HttpMethod.GET,
+                    null,
+                    new ParameterizedTypeReference<List<Review>>() {
+                    });
+            List<Review> reviews = reviewResponse.getBody();
+            ItemDTO itemDTO = CategoryMapper.mapToItemDto(category,item,reviews);
+            //itemDTO.setCategory(category);
+           return itemDTO;
+
     }
 
     @Override
@@ -83,7 +113,7 @@ public class ItemServiceImpl implements ItemService {
                 item.setTitle(updateItem.getTitle());
                 item.setDescription(updateItem.getDescription());
                 item.setPrice(updateItem.getPrice());
-                item.setQuanity(updateItem.getQuanity());
+                item.setQuantity(updateItem.getQuantity());
                 item.setLocation(updateItem.getLocation());
                 itemRepository.save(item);
                 return true;
