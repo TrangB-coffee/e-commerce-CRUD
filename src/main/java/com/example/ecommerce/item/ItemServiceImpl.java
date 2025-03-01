@@ -1,34 +1,69 @@
 package com.example.ecommerce.item;
 
-import com.example.ecommerce.category.Category;
-import com.example.ecommerce.category.CategoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
 
+import com.example.ecommerce.clients.CategoryClient;
+import com.example.ecommerce.clients.ReviewClient;
+import com.example.ecommerce.item.dto.ItemDTO;
+import com.example.ecommerce.item.external.Category;
+import com.example.ecommerce.item.external.Review;
+import com.example.ecommerce.mapper.CategoryMapper;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.ratelimiter.annotation.RateLimiter;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 public class ItemServiceImpl implements ItemService {
     //private List<Item> items = new ArrayList<Item>();
 
-    private ItemRepository itemRepository;
+    ItemRepository itemRepository;
 
+    //RestTemplate restTemplate = new RestTemplate() store in AppConfig
+    @Autowired
+    RestTemplate restTemplate;
 
+    //CategoryClient in clients folder
+    private CategoryClient categoryClient;
+    private ReviewClient reviewClient;
 
-    //private CategoryRepository categoryRepository;
-
-    public ItemServiceImpl(ItemRepository itemRepository) {
+    public ItemServiceImpl(ItemRepository itemRepository, CategoryClient categoryClient, ReviewClient reviewClient) {
         this.itemRepository = itemRepository;
+        this.categoryClient = categoryClient;
+        this.reviewClient = reviewClient;
     }
 
-//    public ItemServiceImpl(CategoryRepository categoryRepository) {
-//        this.categoryRepository = categoryRepository;
-//    }
-
     @Override
-    public List<Item> findAll() {
-        return itemRepository.findAll();
+    @RateLimiter(name = "categoryBreaker",fallbackMethod = "categoryBreakerFallback")
+    public List<ItemDTO> findAll() {
+        List<Item> items = itemRepository.findAll();
+        //List<ItemDTO> itemConnectCategories = new ArrayList<>();
+
+        return items.stream().map(this::convertToDTO).collect(Collectors.toList());
+
+    }
+    public List<String> categoryBreakerFallback(Exception e){
+        List<String> data = new ArrayList<>();
+        data.add("Dummy");
+        return data;
+    }
+    private ItemDTO convertToDTO(Item item){
+            //FeignClient method
+            Category category = categoryClient.geCategory(item.getCategoryId());
+            List<Review> reviews = reviewClient.getReview(item.getCategoryId());
+
+            ItemDTO itemDTO = CategoryMapper.mapToItemDto(category,item,reviews);
+
+           return itemDTO;
     }
 
     @Override
@@ -83,7 +118,7 @@ public class ItemServiceImpl implements ItemService {
                 item.setTitle(updateItem.getTitle());
                 item.setDescription(updateItem.getDescription());
                 item.setPrice(updateItem.getPrice());
-                item.setQuanity(updateItem.getQuanity());
+                item.setQuantity(updateItem.getQuantity());
                 item.setLocation(updateItem.getLocation());
                 itemRepository.save(item);
                 return true;

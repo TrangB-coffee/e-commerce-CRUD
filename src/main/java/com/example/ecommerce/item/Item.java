@@ -1,7 +1,6 @@
 package com.example.ecommerce.item;
 
-import com.example.ecommerce.category.Category;
-import com.example.ecommerce.review.Review;
+
 import com.example.ecommerce.utils.IDGenerator;
 import jakarta.persistence.*;
 
@@ -15,52 +14,42 @@ public class Item {
     private  String title;
     private  String description;
     private  Float price;
-    private  Integer quanity;
+    private  Integer quantity;
     private  String location;
+    private Long categoryId;
 
-    @PrePersist
-    protected void onCreate(){
-        this.id = IDGenerator.generateID();
+//    @PrePersist
+//    protected void onCreate(){
+//        this.id = IDGenerator.generateID();
+//    }
+
+    public Long getCategoryId() {
+        return categoryId;
     }
 
-    @ManyToOne
-    @JoinColumn(name = "category_id")
-    private Category category;
-
-    @OneToMany(mappedBy = "item")
-    private List<Review> reviews;
-
-    public List<Review> getReviews() {
-        return reviews;
-    }
-
-    public void setReviews(List<Review> reviews) {
-        this.reviews = reviews;
+    public void setCategoryId(Long categoryId) {
+        this.categoryId = categoryId;
     }
 
 
 
-    public Category getCategory() {
-        return category;
-    }
 
-    public void setCategory(Category category) {
-        this.category = category;
-    }
+
+
 
     //Need this: for jpa to instance obj
     public Item(){
 
     }
-    public Item(Long id, String title, String description, Float price, Integer quanity, String location, Category category, List<Review> reviews) {
+    public Item(Long id, String title, String description, Float price, Integer quantity, String location,Long categoryId) {
         this.id = id;
         this.title = title;
         this.description = description;
         this.price = price;
-        this.quanity = quanity;
+        this.quantity = quantity;
         this.location = location;
-        this.category = category;
-        this.reviews = reviews;
+        this.categoryId = categoryId;
+
     }
 
     public void setId(Long id) {
@@ -79,8 +68,8 @@ public class Item {
         this.price = price;
     }
 
-    public void setQuanity(Integer quanity) {
-        this.quanity = quanity;
+    public void setQuantity(Integer quantity) {
+        this.quantity = quantity;
     }
 
     public void setLocation(String location) {
@@ -103,8 +92,8 @@ public class Item {
         return price;
     }
 
-    public Integer getQuanity() {
-        return quanity;
+    public Integer getQuantity() {
+        return quantity;
     }
 
     public String getLocation() {

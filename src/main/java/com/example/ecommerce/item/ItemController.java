@@ -1,13 +1,11 @@
 package com.example.ecommerce.item;
 
-import com.example.ecommerce.DTO.ItemRequest;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpRequest;
+
+import com.example.ecommerce.item.dto.ItemDTO;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 
 @RestController
@@ -21,7 +19,7 @@ public class ItemController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Item>> findAll(){
+    public ResponseEntity<List<ItemDTO>> findAll(){
         return ResponseEntity.ok(itemService.findAll());
     }
 
